@@ -4,14 +4,51 @@
 
 {% block content %}
 <section class="summary">
-  <p>Збережено <strong id="count">0</strong> свіжих оголошень (молодші за 2 дні)</p>
+  <p>
+    Збережено <strong id="count">0</strong> свіжих оголошень (молодші за 2 дні)
+    · <span id="countdown" class="countdown">До оновлення: —</span>
+  </p>
 </section>
+
+<section class="filters">
+  <div class="filter-group">
+    <label for="f-min-price">Ціна від, грн</label>
+    <input type="number" id="f-min-price" min="0" placeholder="0">
+  </div>
+  <div class="filter-group">
+    <label for="f-max-price">Ціна до, грн</label>
+    <input type="number" id="f-max-price" min="0" placeholder="∞">
+  </div>
+  <div class="filter-group">
+    <label for="f-rooms">Кімнат</label>
+    <select id="f-rooms"><option value="">Всі</option></select>
+  </div>
+  <div class="filter-group">
+    <label for="f-district">Район</label>
+    <select id="f-district"><option value="">Всі</option></select>
+  </div>
+  <div class="filter-group">
+    <label for="f-date-from">Дата від</label>
+    <input type="date" id="f-date-from">
+  </div>
+  <div class="filter-group">
+    <label for="f-date-to">Дата до</label>
+    <input type="date" id="f-date-to">
+  </div>
+  <div class="filter-group">
+    <label for="f-q">Пошук</label>
+    <input type="text" id="f-q" placeholder="Текст у заголовку">
+  </div>
+  <button id="f-reset" class="btn btn-secondary" type="button">Скинути</button>
+</section>
+
 <section class="table-wrap">
   <table id="listings">
     <thead>
       <tr>
         <th>Оголошення</th>
         <th>Ціна</th>
+        <th>Кімнат</th>
         <th>Площа</th>
         <th>Район</th>
         <th>Опубліковано</th>
@@ -19,6 +56,6 @@
     </thead>
     <tbody></tbody>
   </table>
-  <p id="empty" class="empty">Поки що немає даних. Запустіть парсер або зачекайте автоматичного прогону.</p>
+  <p id="empty" class="empty">Немає оголошень за обраними фільтрами.</p>
 </section>
 {% endblock %}

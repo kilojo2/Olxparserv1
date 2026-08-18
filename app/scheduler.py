@@ -62,3 +62,14 @@ def run_now() -> None:
 
 def get_last_result() -> Optional[dict]:
     return last_result
+
+
+def get_next_run_at() -> Optional[str]:
+    """Время следующего автозапуска (ISO) или None, если планировщик не запущен."""
+    global _scheduler
+    if _scheduler is None:
+        return None
+    job = _scheduler.get_job("olx_parse")
+    if job is None or job.next_run_time is None:
+        return None
+    return job.next_run_time.isoformat()

@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 from playwright.sync_api import Page
 
 from app.parser.date_parser import parse_olx_date
+from app.parser.extract import parse_district, parse_price_value, parse_rooms
 
 # Долгосрочная аренда квартир
 CATEGORY_SLUG = "nedvizhimost/kvartiry/dolgosrochnaya-arenda-kvartir"
@@ -124,13 +125,20 @@ def extract_card(card, now) -> Optional[dict]:
 
         published_at = parse_olx_date(date_text, now)
 
+        price_value = parse_price_value(price)
+        rooms = parse_rooms(title)
+        district = parse_district(title, location)
+
         return {
             "olx_id": olx_id,
             "url": url,
             "title": title,
             "price": price,
+            "price_value": price_value,
+            "rooms": rooms,
             "area": area,
             "location": location,
+            "district": district,
             "published_at": published_at,
         }
     except Exception:

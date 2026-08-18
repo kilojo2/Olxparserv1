@@ -15,4 +15,5 @@ router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    # Starlette 1.x: request передаётся первым аргументом, в контекст добавится сам.
+    return templates.TemplateResponse(request, "index.html")

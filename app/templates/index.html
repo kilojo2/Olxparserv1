@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}OLX Парсер — свіжі оголошення{% endblock %}
+
+{% block content %}
+<section class="summary">
+  <p>Збережено <strong id="count">0</strong> свіжих оголошень (молодші за 2 дні)</p>
+</section>
+<section class="table-wrap">
+  <table id="listings">
+    <thead>
+      <tr>
+        <th>Оголошення</th>
+        <th>Ціна</th>
+        <th>Площа</th>
+        <th>Район</th>
+        <th>Опубліковано</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <p id="empty" class="empty">Поки що немає даних. Запустіть парсер або зачекайте автоматичного прогону.</p>
+</section>
+{% endblock %}

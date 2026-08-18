@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import db
 from app.config import settings
-from app.routes import api, pages
+from app.routes import api, pages, telegram_api
 from app.scheduler import shutdown_scheduler, start_scheduler
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -28,3 +28,4 @@ app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.include_router(pages.router)
 app.include_router(api.router)
+app.include_router(telegram_api.router)

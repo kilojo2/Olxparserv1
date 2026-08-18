@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Вход — Настройки{% endblock %}
+{% block content %}
+<section class="login-wrap">
+  <h2>Вход в настройки</h2>
+  <form id="login-form">
+    <input type="password" id="admin-password" placeholder="Пароль" autocomplete="current-password">
+    <button type="submit" class="btn">Войти</button>
+  </form>
+  <p id="login-error" class="error-msg"></p>
+</section>
+<script src="/static/settings.js"></script>
+{% endblock %}

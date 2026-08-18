@@ -56,6 +56,8 @@ def _migrate() -> None:
         "price_value": "FLOAT",
         "rooms": "INTEGER",
         "district": "VARCHAR(128)",
+        "source": "VARCHAR(16)",
+        "channel": "VARCHAR(128)",
     }
     for name, col_type in additions.items():
         if name not in existing:

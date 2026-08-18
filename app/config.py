@@ -39,5 +39,16 @@ class Settings(BaseSettings):
     # --- OLX ---
     olx_base_url: str = "https://www.olx.ua"
 
+    # --- Админ ---
+    admin_password: str = "changeme"
+
+    # --- Telegram ---
+    telegram_enabled: bool = False
+    telegram_api_id: Optional[int] = None
+    telegram_api_hash: Optional[str] = None
+    telegram_session: Optional[str] = None
+    telegram_channels: str = ""
+    telegram_limit: int = 30
+
 
 settings = Settings()

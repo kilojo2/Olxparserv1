@@ -17,3 +17,12 @@ router = APIRouter()
 def index(request: Request):
     # Starlette 1.x: request передаётся первым аргументом, в контекст добавится сам.
     return templates.TemplateResponse(request, "index.html")
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def settings_page(request: Request):
+    from app import auth
+
+    if not auth.is_admin(request):
+        return templates.TemplateResponse(request, "login.html")
+    return templates.TemplateResponse(request, "settings.html")

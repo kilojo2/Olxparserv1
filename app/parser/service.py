@@ -34,6 +34,7 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
         "skipped_old": 0,
         "skipped_duplicate": 0,
         "skipped_unknown": 0,
+        "telegram_cards": 0,
         "errors": [],
         "finished_at": now.isoformat(sep=" "),
     }
@@ -66,6 +67,21 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
                 time.sleep(random.uniform(1.5, 4.0))
         finally:
             context.close()
+
+    # Telegram-каналы (если включены)
+    from app.settings_store import get_telegram_config
+
+    tg_cfg = get_telegram_config()
+    if tg_cfg["enabled"] and tg_cfg["channels"]:
+        try:
+            from app.parser.telegram import run_telegram_parse
+
+            tg_cards, tg_errors = run_telegram_parse(tg_cfg)
+            stats["errors"].extend(tg_errors)
+            stats["telegram_cards"] = len(tg_cards)
+            _store(tg_cards, now, settings, stats, seen_ids)
+        except Exception as exc:  # noqa: BLE001
+            stats["errors"].append(f"telegram: {exc}")
 
     return stats
 
@@ -113,6 +129,8 @@ def _store(cards: list[dict], now, settings: Settings, stats: dict, seen_ids: se
                     area=card["area"],
                     location=card["location"],
                     published_at=card["published_at"],
+                    source=card.get("source", "olx"),
+                    channel=card.get("channel"),
                     first_seen_at=now,
                     last_seen_at=now,
                 )

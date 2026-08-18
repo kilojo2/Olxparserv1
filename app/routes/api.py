@@ -4,10 +4,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app import db
+from app import auth, db
 from app.config import settings
 from app.models import Listing
 from app.scheduler import get_last_result, get_next_run_at, run_now
@@ -94,3 +95,18 @@ def status():
         "next_run_at": get_next_run_at(),
         "interval_minutes": settings.interval_minutes,
     }
+
+
+class LoginBody(BaseModel):
+    password: str
+
+
+@router.post("/admin/login")
+def admin_login(body: LoginBody, response: Response):
+    if not auth.check_password(body.password):
+        raise HTTPException(status_code=401, detail="Неверный пароль")
+    token = auth.create_token()
+    response.set_cookie(
+        "admin_token", token, httponly=True, samesite="lax", max_age=86400
+    )
+    return {"ok": True}

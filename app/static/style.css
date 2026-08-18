@@ -166,3 +166,98 @@ td a:hover { text-decoration: underline; }
 .btn-secondary:hover {
   background: #e0e5ec;
 }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.badge-olx {
+  background: #1a73e8;
+}
+
+.badge-tg {
+  background: #2aabee;
+}
+
+.login-wrap {
+  max-width: 380px;
+  margin: 40px auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.login-wrap form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-wrap input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.error-msg {
+  color: #c0392b;
+  font-size: 14px;
+}
+
+.settings-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.settings-section h3 {
+  margin-top: 0;
+}
+
+.settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.settings-row input,
+.settings-section textarea {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.settings-section textarea {
+  width: 100%;
+  flex: auto;
+}
+
+.tg-status {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.tg-status.ok { color: #27ae60; }
+.tg-status.off { color: #c0392b; }
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 14px;
+}

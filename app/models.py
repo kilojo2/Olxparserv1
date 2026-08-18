@@ -23,6 +23,8 @@ class Listing(Base):
     price_value = Column(Float, nullable=True, index=True)
     rooms = Column(Integer, nullable=True, index=True)
     district = Column(String(128), nullable=True, index=True)
+    source = Column(String(16), nullable=True, index=True, default="olx")
+    channel = Column(String(128), nullable=True)
     published_at = Column(DateTime, nullable=True, index=True)
     first_seen_at = Column(DateTime, default=kiev_now, nullable=False)
     last_seen_at = Column(DateTime, default=kiev_now, onupdate=kiev_now, nullable=False)
@@ -42,6 +44,16 @@ class Listing(Base):
             "area": self.area,
             "location": self.location,
             "district": self.district,
+            "source": self.source,
+            "channel": self.channel,
             "published_at": _iso(self.published_at),
             "first_seen_at": _iso(self.first_seen_at),
         }
+
+
+class AppSetting(Base):
+    """Хранилище настроек (key-value), редактируемых через сайт."""
+    __tablename__ = "app_settings"
+
+    key = Column(String(128), primary_key=True)
+    value = Column(String(4096), nullable=True)

@@ -59,10 +59,19 @@ async function loadListings() {
       const tr = document.createElement('tr');
       const title = l.title || l.url;
       const rooms = (l.rooms === null || l.rooms === undefined) ? '' : l.rooms;
+      const isTg = l.source === 'telegram';
+      const sourceBadge = isTg
+        ? '<span class="badge badge-tg">TG</span>'
+        : '<span class="badge badge-olx">OLX</span>';
+      const price = l.price ||
+        ((l.price_value !== null && l.price_value !== undefined)
+          ? String(l.price_value) + ' грн.'
+          : '');
       tr.innerHTML =
+        '<td>' + sourceBadge + '</td>' +
         '<td><a href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener noreferrer">' +
         escapeHtml(title) + '</a></td>' +
-        '<td>' + escapeHtml(l.price) + '</td>' +
+        '<td>' + escapeHtml(price) + '</td>' +
         '<td>' + escapeHtml(rooms) + '</td>' +
         '<td>' + escapeHtml(l.area) + '</td>' +
         '<td>' + escapeHtml(l.district || l.location) + '</td>' +

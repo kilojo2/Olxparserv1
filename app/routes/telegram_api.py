@@ -22,6 +22,7 @@ class ConfigBody(BaseModel):
 
 class PhoneBody(BaseModel):
     phone: str
+    force_sms: bool = False
 
 
 class CodeBody(BaseModel):
@@ -67,12 +68,12 @@ async def send_code_endpoint(request: Request, body: PhoneBody):
     if not phone:
         raise HTTPException(status_code=400, detail="Укажите номер телефона")
     try:
-        await send_code(phone)
+        info = await send_code(phone, force_sms=body.force_sms)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Ошибка отправки кода: {exc}")
-    return {"ok": True}
+    return {"ok": True, **info}
 
 
 @router.post("/verify-code")

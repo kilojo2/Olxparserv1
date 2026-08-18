@@ -78,14 +78,18 @@ if (document.getElementById('tg-api-id')) {
     } catch (e) { setMsg(e.message, true); }
   });
 
-  document.getElementById('send-code').addEventListener('click', async () => {
+  async function sendCode(forceSms) {
     try {
-      await postJson('/api/telegram/send-code', {
+      const res = await postJson('/api/telegram/send-code', {
         phone: document.getElementById('tg-phone').value,
+        force_sms: forceSms,
       });
-      setMsg('Код отправлен — проверьте Telegram');
+      setMsg('Код отправлен: ' + (res.method || 'проверьте Telegram'));
     } catch (e) { setMsg(e.message, true); }
-  });
+  }
+
+  document.getElementById('send-code').addEventListener('click', () => sendCode(false));
+  document.getElementById('send-sms').addEventListener('click', () => sendCode(true));
 
   document.getElementById('verify-code').addEventListener('click', async () => {
     try {

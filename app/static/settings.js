@@ -54,67 +54,14 @@ if (loginForm) {
 async function loadConfig() {
   try {
     const cfg = await api('/api/telegram/config');
-    document.getElementById('tg-api-id').value = cfg.api_id || '';
-    document.getElementById('tg-api-hash').value = cfg.api_hash || '';
     document.getElementById('tg-channels').value = cfg.channels || '';
     document.getElementById('tg-enabled').checked = !!cfg.enabled;
-    const statusEl = document.getElementById('tg-status');
-    const ok = !!cfg.session_set;
-    statusEl.textContent = ok ? '✅ Подключено' : '❌ Не подключено';
-    statusEl.className = 'tg-status ' + (ok ? 'ok' : 'off');
   } catch (e) {
     console.error(e);
   }
 }
 
-if (document.getElementById('tg-api-id')) {
-  document.getElementById('save-app').addEventListener('click', async () => {
-    try {
-      await postJson('/api/telegram/config', {
-        api_id: document.getElementById('tg-api-id').value,
-        api_hash: document.getElementById('tg-api-hash').value,
-      });
-      setMsg('API сохранено');
-    } catch (e) { setMsg(e.message, true); }
-  });
-
-  async function sendCode(forceSms) {
-    try {
-      const res = await postJson('/api/telegram/send-code', {
-        phone: document.getElementById('tg-phone').value,
-        force_sms: forceSms,
-      });
-      setMsg('Код отправлен: ' + (res.method || 'проверьте Telegram'));
-    } catch (e) { setMsg(e.message, true); }
-  }
-
-  document.getElementById('send-code').addEventListener('click', () => sendCode(false));
-  document.getElementById('send-sms').addEventListener('click', () => sendCode(true));
-
-  document.getElementById('verify-code').addEventListener('click', async () => {
-    try {
-      const res = await postJson('/api/telegram/verify-code', {
-        code: document.getElementById('tg-code').value,
-      });
-      if (res.twofa) {
-        setMsg('Введите пароль 2FA');
-      } else {
-        setMsg('✅ Подключено');
-        loadConfig();
-      }
-    } catch (e) { setMsg(e.message, true); }
-  });
-
-  document.getElementById('verify-password').addEventListener('click', async () => {
-    try {
-      await postJson('/api/telegram/verify-password', {
-        password: document.getElementById('tg-2fa').value,
-      });
-      setMsg('✅ Подключено');
-      loadConfig();
-    } catch (e) { setMsg(e.message, true); }
-  });
-
+if (document.getElementById('tg-channels')) {
   document.getElementById('save-channels').addEventListener('click', async () => {
     try {
       await postJson('/api/telegram/config', {

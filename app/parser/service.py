@@ -68,15 +68,15 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
         finally:
             context.close()
 
-    # Telegram-каналы (если включены)
+    # Telegram-каналы (если включены) — через веб-превью t.me/s/ (без входа)
     from app.settings_store import get_telegram_config
 
     tg_cfg = get_telegram_config()
     if tg_cfg["enabled"] and tg_cfg["channels"]:
         try:
-            from app.parser.telegram import run_telegram_parse
+            from app.parser.telegram_web import run_telegram_web_parse
 
-            tg_cards, tg_errors = run_telegram_parse(tg_cfg)
+            tg_cards, tg_errors = run_telegram_web_parse(tg_cfg)
             stats["errors"].extend(tg_errors)
             stats["telegram_cards"] = len(tg_cards)
             _store(tg_cards, now, settings, stats, seen_ids)

@@ -9,10 +9,11 @@ from zoneinfo import ZoneInfo
 import httpx
 from bs4 import BeautifulSoup
 
-from app.parser.extract import parse_district, parse_price_value, parse_rooms
+from app.parser.extract import parse_district, parse_rooms, parse_tg_price
 
 KIEV_TZ = ZoneInfo("Europe/Kiev")
 _POST_ID_RE = re.compile(r"/(\d+)$")
+_AREA_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*м[²2]")
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -93,7 +94,7 @@ def _extract_time(msg) -> Optional[datetime]:
 
 
 def _build_card(channel: str, msg_id: str, text: str, published_at: Optional[datetime]) -> dict:
-    price_value = parse_price_value(text)
+    price_value = parse_tg_price(text)
     if price_value is not None:
         if price_value == int(price_value):
             price = f"{int(price_value):,}".replace(",", " ") + " грн."
@@ -102,6 +103,11 @@ def _build_card(channel: str, msg_id: str, text: str, published_at: Optional[dat
     else:
         price = ""
 
+    area = ""
+    area_m = _AREA_RE.search(text)
+    if area_m:
+        area = area_m.group(0)
+
     return {
         "olx_id": f"tg-{msg_id}",
         "url": f"https://t.me/{channel}/{msg_id}",
@@ -109,7 +115,7 @@ def _build_card(channel: str, msg_id: str, text: str, published_at: Optional[dat
         "price": price,
         "price_value": price_value,
         "rooms": parse_rooms(text),
-        "area": "",
+        "area": area,
         "location": "Хмельницький",
         "district": parse_district(text),
         "published_at": published_at,

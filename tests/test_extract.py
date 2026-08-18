@@ -1,4 +1,4 @@
-from app.parser.extract import parse_district, parse_price_value, parse_rooms
+from app.parser.extract import parse_district, parse_price_value, parse_rooms, parse_tg_price
 
 
 def test_price_simple():
@@ -33,6 +33,22 @@ def test_rooms_three_word():
     assert parse_rooms("трикімнатна квартира") == 3
 
 
+def test_rooms_abbreviation():
+    assert parse_rooms("Оренда 2 кімн. новобудови") == 2
+
+
+def test_tg_price_marker():
+    assert parse_tg_price("1️⃣ КІМНАТНА КВАРТИРА 💰 20000 грн") == 20000.0
+
+
+def test_tg_price_kp():
+    assert parse_tg_price("3-кімнатна. Центр. Новобудова. 20000+кп Юлія") == 20000.0
+
+
+def test_tg_price_grn():
+    assert parse_tg_price("Здам 1 кімнату в центрі 12000 грн") == 12000.0
+
+
 def test_rooms_studio():
     assert parse_rooms("Студія в центрі") == 1
 
@@ -47,3 +63,7 @@ def test_district_center():
 
 def test_district_none():
     assert parse_district("Оренда квартири") is None
+
+
+def test_district_street_vs_area():
+    assert parse_district("2-кімнатна. Виставка. Вул.Зарічанська, 9") == "Виставка"

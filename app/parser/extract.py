@@ -7,6 +7,27 @@ from typing import Optional
 # --- Цена ---------------------------------------------------------------
 
 _PRICE_NUM_RE = re.compile(r"\d[\d\s\u00a0\u202f.,]*")
+_PRICE_MARKER_RE = re.compile(r"💰\s*(\d[\d\s\u00a0\u202f.,]*)")
+_PRICE_SUFFIX_RE = re.compile(r"(\d[\d\s\u00a0\u202f.,]*)\s*(?:грн|₴|\+кп)")
+
+
+def _to_float(raw: str) -> Optional[float]:
+    """Преобразует строку числа (с пробелами/запятыми/точками) в float."""
+    last_sep = None
+    for ch in raw:
+        if ch in ".,":
+            last_sep = ch
+
+    cleaned = re.sub(r"[\s\u00a0\u202f]", "", raw)
+    if last_sep == ",":
+        cleaned = cleaned.replace(".", "").replace(",", ".")
+    elif last_sep == ".":
+        cleaned = cleaned.replace(",", "")
+
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
 
 
 def parse_price_value(price: Optional[str]) -> Optional[float]:
@@ -22,26 +43,23 @@ def parse_price_value(price: Optional[str]) -> Optional[float]:
     m = _PRICE_NUM_RE.search(price)
     if not m:
         return None
-    raw = m.group(0)
+    return _to_float(m.group(0))
 
-    # Определяем десятичный разделитель — последний из . , в числе.
-    last_sep = None
-    for ch in raw:
-        if ch in ".,":
-            last_sep = ch
 
-    cleaned = re.sub(r"[\s\u00a0\u202f]", "", raw)
-    if last_sep is None:
-        pass  # целое число
-    elif last_sep == ",":
-        cleaned = cleaned.replace(".", "").replace(",", ".")
-    else:  # "."
-        cleaned = cleaned.replace(",", "")
-
-    try:
-        return float(cleaned)
-    except ValueError:
+def parse_tg_price(text: Optional[str]) -> Optional[float]:
+    """Извлекает цену из текста Telegram-объявления (по маркерам цены)."""
+    if not text:
         return None
+    # 1) «💰 20000 грн»
+    m = _PRICE_MARKER_RE.search(text)
+    if m:
+        return _to_float(m.group(1))
+    # 2) «20000 грн» / «20000₴» / «20000+кп»
+    m = _PRICE_SUFFIX_RE.search(text)
+    if m:
+        return _to_float(m.group(1))
+    # 3) первое число (fallback)
+    return parse_price_value(text)
 
 
 # --- Комнаты ------------------------------------------------------------
@@ -49,8 +67,8 @@ def parse_price_value(price: Optional[str]) -> Optional[float]:
 _ROOMS_FRAC_RE = re.compile(r"(\d+)[.,]\d+\s*[-–]?\s*[кk]\b")  # "1.5к" / "1,5к"
 _ROOMS_K_RE = re.compile(r"(\d+)\s*[-–]?\s*[кk]\b")  # "1к", "2-к", "3 к"
 _ROOMS_NUM_RE = re.compile(
-    r"(\d+)\s*[-–]?\s*[хx]?\s*(?:кімнат|комнат)"
-)  # "2-кімнатна", "2-х комнатная"
+    r"(\d+)\s*[-–]?\s*[хx]?\s*(?:кімн|комн)"
+)  # "2-кімнатна", "2-х комнатная", "2 кімн."
 
 # Словарные формы (подстрока -> число комнат)
 _WORD_ROOMS = [
@@ -100,6 +118,7 @@ DISTRICT_KEYWORDS = [
     ("Південно-Західний", ["південно-захід", "юго-запад"]),
     ("Інститутська", ["інститут", "институт"]),
     ("Зарічанська", ["зарічан", "заречан"]),
+    ("Лезневе", ["лезнев"]),
     ("Озерна", ["озерн"]),
     ("Виставка", ["вистав", "выстав"]),
     ("Дубово", ["дубов"]),
@@ -110,9 +129,19 @@ DISTRICT_KEYWORDS = [
 ]
 
 
+# Упоминания улиц (вул./пров./ул.) — чтобы не путать улицу с районом
+_STREET_RE = re.compile(
+    r"(?:вул\.?|вулиця|ул\.?|улица|пров\.?|провулок|пер\.?|переулок)\s*[\w'’.-]*",
+    re.IGNORECASE,
+)
+
+
 def parse_district(title: Optional[str], location: Optional[str] = None) -> Optional[str]:
     """Определяет район Хмельницкого по заголовку/локации (keyword-based)."""
-    text = " ".join(filter(None, [title, location])).lower()
+    text = " ".join(filter(None, [title, location]))
+    # Убираем упоминания улиц («вул. Зарічанська»), чтобы не путать с районом
+    text = _STREET_RE.sub(" ", text)
+    text = text.lower()
     for canonical, stems in DISTRICT_KEYWORDS:
         for stem in stems:
             if stem in text:

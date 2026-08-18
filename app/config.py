@@ -47,7 +47,9 @@ class Settings(BaseSettings):
     telegram_api_id: Optional[int] = None
     telegram_api_hash: Optional[str] = None
     telegram_session: Optional[str] = None
-    telegram_channels: str = ""
+    telegram_channels: str = (
+        "orenda_nerukhomist_kvartiry,arenda_khmelnitskiy_kvartiry,an_monolith"
+    )
     telegram_limit: int = 30
 
 

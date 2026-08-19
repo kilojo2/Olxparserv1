@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app import auth
-from app.settings_store import get_telegram_config, set_setting
+from app.settings_store import get_telegram_config, set_secret_setting, set_setting
 from app.telegram_auth import has_pending_login, send_code, verify_code, verify_password
 
 router = APIRouter(prefix="/api/telegram")
@@ -40,7 +40,7 @@ def get_config(request: Request):
     return {
         "enabled": cfg["enabled"],
         "api_id": cfg["api_id"],
-        "api_hash": cfg["api_hash"],
+        "api_hash_set": bool(cfg["api_hash"]),
         "session_set": bool(cfg["session"]),
         "channels": cfg["channels"],
         "pending_login": has_pending_login(),
@@ -53,7 +53,10 @@ def save_config(request: Request, body: ConfigBody):
     if body.api_id is not None:
         set_setting("telegram_api_id", body.api_id if body.api_id else None)
     if body.api_hash is not None:
-        set_setting("telegram_api_hash", body.api_hash if body.api_hash else None)
+        try:
+            set_secret_setting("telegram_api_hash", body.api_hash if body.api_hash else None)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc))
     if body.channels is not None:
         set_setting("telegram_channels", body.channels)
     if body.enabled is not None:
@@ -90,7 +93,10 @@ async def verify_code_endpoint(request: Request, body: CodeBody):
         raise HTTPException(status_code=400, detail=f"Ошибка проверки кода: {exc}")
     if result["twofa"]:
         return {"ok": True, "twofa": True}
-    set_setting("telegram_session", result["session"])
+    try:
+        set_secret_setting("telegram_session", result["session"])
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     return {"ok": True, "twofa": False, "connected": True}
 
 
@@ -103,5 +109,8 @@ async def verify_password_endpoint(request: Request, body: PasswordBody):
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=400, detail=f"Ошибка проверки пароля: {exc}")
-    set_setting("telegram_session", session_str)
+    try:
+        set_secret_setting("telegram_session", session_str)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     return {"ok": True, "connected": True}

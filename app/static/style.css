@@ -184,6 +184,14 @@ td a:hover { text-decoration: underline; }
   background: #2aabee;
 }
 
+.badge-domria {
+  background: #d32f2f;
+}
+
+.badge-rieltor {
+  background: #7b1fa2;
+}
+
 .login-wrap {
   max-width: 380px;
   margin: 40px auto;

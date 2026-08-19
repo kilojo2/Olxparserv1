@@ -35,6 +35,7 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
         "skipped_duplicate": 0,
         "skipped_unknown": 0,
         "telegram_cards": 0,
+        "sites_cards": 0,
         "errors": [],
         "finished_at": now.isoformat(sep=" "),
     }
@@ -58,7 +59,7 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
                     )
                     continue
 
-                cards = parse_listing_page(page, now)
+                cards = parse_listing_page(page, now, stats["errors"])
                 stats["pages"] += 1
                 stats["cards"] += len(cards)
                 _store(cards, now, settings, stats, seen_ids)
@@ -68,10 +69,22 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
         finally:
             context.close()
 
+    # HTML-площадки (DOM.RIA, RIELTOR.UA)
+    try:
+        from app.parser.sites import run_sites_parse
+
+        site_cards, site_errors = run_sites_parse(settings, now)
+        stats["errors"].extend(site_errors)
+        stats["sites_cards"] = len(site_cards)
+        _store(site_cards, now, settings, stats, seen_ids)
+    except Exception as exc:  # noqa: BLE001
+        stats["errors"].append(f"sites: {exc}")
+
     # Telegram-каналы (если включены) — через веб-превью t.me/s/ (без входа)
     from app.settings_store import get_telegram_config
 
     tg_cfg = get_telegram_config()
+    tg_cfg["location"] = settings.city
     if tg_cfg["enabled"] and tg_cfg["channels"]:
         try:
             from app.parser.telegram_web import run_telegram_web_parse
@@ -83,12 +96,15 @@ def run_parse_once(settings: Optional[Settings] = None) -> dict:
         except Exception as exc:  # noqa: BLE001
             stats["errors"].append(f"telegram: {exc}")
 
+    stats["status"] = "partial" if stats["errors"] else "ok"
+    stats["finished_at"] = kiev_now().isoformat(sep=" ")
     return stats
 
 
 def _store(cards: list[dict], now, settings: Settings, stats: dict, seen_ids: set) -> None:
     """Сохраняет свежие объявления в БД с дедупликацией по olx_id."""
     session = db.SessionLocal()
+    pending_saved = 0
     try:
         for card in cards:
             olx_id = card.get("olx_id")
@@ -124,6 +140,7 @@ def _store(cards: list[dict], now, settings: Settings, stats: dict, seen_ids: se
                     title=card["title"],
                     price=card["price"],
                     price_value=card.get("price_value"),
+                    currency=card.get("currency"),
                     rooms=card.get("rooms"),
                     district=card.get("district"),
                     area=card["area"],
@@ -135,9 +152,9 @@ def _store(cards: list[dict], now, settings: Settings, stats: dict, seen_ids: se
                     last_seen_at=now,
                 )
             )
-            stats["saved"] += 1
-
+            pending_saved += 1
         session.commit()
+        stats["saved"] += pending_saved
     except Exception as exc:
         session.rollback()
         stats["errors"].append(str(exc))

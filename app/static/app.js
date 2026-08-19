@@ -15,13 +15,23 @@ function formatDate(iso) {
   return String(iso).replace('T', ' ').slice(0, 16);
 }
 
+function safeUrl(value) {
+  try {
+    const url = new URL(value, window.location.origin);
+    return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : '#';
+  } catch (e) {
+    return '#';
+  }
+}
+
 const FILTER_IDS = [
-  'f-min-price', 'f-max-price', 'f-rooms', 'f-district',
+  'f-currency', 'f-min-price', 'f-max-price', 'f-rooms', 'f-district',
   'f-date-from', 'f-date-to', 'f-q'
 ];
 
 function buildQuery() {
   const p = new URLSearchParams();
+  const currency = document.getElementById('f-currency').value;
   const min = document.getElementById('f-min-price').value;
   const max = document.getElementById('f-max-price').value;
   const rooms = document.getElementById('f-rooms').value;
@@ -31,6 +41,7 @@ function buildQuery() {
   const q = document.getElementById('f-q').value.trim();
   if (min) p.set('min_price', min);
   if (max) p.set('max_price', max);
+  if (currency) p.set('currency', currency);
   if (rooms) p.set('rooms', rooms);
   if (district) p.set('district', district);
   if (from) p.set('date_from', from);
@@ -43,6 +54,7 @@ function buildQuery() {
 async function loadListings() {
   try {
     const res = await fetch('/api/listings' + buildQuery());
+    if (res.status === 401) { window.location.href = '/settings'; return; }
     const data = await res.json();
     document.getElementById('count').textContent = data.count;
     const tbody = document.querySelector('#listings tbody');
@@ -59,17 +71,18 @@ async function loadListings() {
       const tr = document.createElement('tr');
       const title = l.title || l.url;
       const rooms = (l.rooms === null || l.rooms === undefined) ? '' : l.rooms;
-      const isTg = l.source === 'telegram';
-      const sourceBadge = isTg
-        ? '<span class="badge badge-tg">TG</span>'
-        : '<span class="badge badge-olx">OLX</span>';
+      const sourceLabels = { telegram: 'TG', olx: 'OLX', domria: 'RIA', rieltor: 'RIEL' };
+      const src = l.source || 'olx';
+      const label = sourceLabels[src] || src.toUpperCase().slice(0, 5);
+      const safeClass = src.replace(/[^a-z0-9_-]/gi, '');
+      const sourceBadge = '<span class="badge badge-' + safeClass + '">' + escapeHtml(label) + '</span>';
       const price = l.price ||
         ((l.price_value !== null && l.price_value !== undefined)
-          ? String(l.price_value) + ' грн.'
+          ? String(l.price_value) + ' ' + (l.currency || '')
           : '');
       tr.innerHTML =
         '<td>' + sourceBadge + '</td>' +
-        '<td><a href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener noreferrer">' +
+        '<td><a href="' + escapeHtml(safeUrl(l.url)) + '" target="_blank" rel="noopener noreferrer">' +
         escapeHtml(title) + '</a></td>' +
         '<td>' + escapeHtml(price) + '</td>' +
         '<td>' + escapeHtml(rooms) + '</td>' +
@@ -89,6 +102,13 @@ async function loadFilters() {
     const data = await res.json();
     const roomsSel = document.getElementById('f-rooms');
     const districtSel = document.getElementById('f-district');
+    const currencySel = document.getElementById('f-currency');
+    for (const c of (data.currencies || [])) {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      currencySel.appendChild(opt);
+    }
     for (const r of (data.rooms || [])) {
       const opt = document.createElement('option');
       opt.value = r;
@@ -144,10 +164,13 @@ function updateCountdown() {
 async function runNow() {
   const btn = document.getElementById('run-now');
   const status = document.getElementById('status');
+  if (!btn || !status) return;
   btn.disabled = true;
   status.textContent = '⏳ Парсинг…';
   try {
-    await fetch('/api/run', { method: 'POST' });
+    const res = await fetch('/api/run', { method: 'POST' });
+    if (res.status === 401) { window.location.href = '/settings'; return; }
+    if (!res.ok) throw new Error('run failed');
     status.textContent = '✅ Запущено';
   } catch (e) {
     status.textContent = '❌ Помилка';

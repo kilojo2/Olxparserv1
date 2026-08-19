@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 from playwright.sync_api import Page
 
 from app.parser.date_parser import parse_olx_date
-from app.parser.extract import parse_district, parse_price_value, parse_rooms
+from app.parser.extract import parse_district, parse_price_currency, parse_price_value, parse_rooms
 
 # Долгосрочная аренда квартир
 CATEGORY_SLUG = "nedvizhimost/kvartiry/dolgosrochnaya-arenda-kvartir"
@@ -71,8 +71,12 @@ def split_location_date(text: str) -> tuple[str, str]:
     return text.strip(), ""
 
 
-def extract_card(card, now) -> Optional[dict]:
+def extract_card(card, now, errors: Optional[list[str]] = None) -> Optional[dict]:
     """Извлекает данные одной карточки объявления."""
+    def skip(reason: str) -> None:
+        if errors is not None:
+            errors.append(f"card skipped: {reason}")
+
     try:
         # Ссылка заголовка объявления — самый надёжный селектор.
         link_el = card.query_selector("a[data-testid='card-title-link']")
@@ -86,15 +90,18 @@ def extract_card(card, now) -> Optional[dict]:
         if link_el is None:
             link_el = card.query_selector("a[href*='/d/']")
         if link_el is None:
+            skip("title link not found")
             return None
 
         href = link_el.get_attribute("href")
         if not href or "/d/" not in href:
+            skip("invalid listing href")
             return None
 
         url = href if href.startswith("http") else "https://www.olx.ua" + href
         olx_id = extract_ad_id(url)
         if not olx_id:
+            skip("listing ID not found")
             return None
 
         title = _clean(link_el.inner_text() or "")
@@ -126,6 +133,7 @@ def extract_card(card, now) -> Optional[dict]:
         published_at = parse_olx_date(date_text, now)
 
         price_value = parse_price_value(price)
+        currency = parse_price_currency(price)
         rooms = parse_rooms(title)
         district = parse_district(title, location)
 
@@ -135,26 +143,32 @@ def extract_card(card, now) -> Optional[dict]:
             "title": title,
             "price": price,
             "price_value": price_value,
+            "currency": currency,
             "rooms": rooms,
             "area": area,
             "location": location,
             "district": district,
             "published_at": published_at,
         }
-    except Exception:
+    except Exception as exc:
+        if errors is not None:
+            errors.append(f"card: {type(exc).__name__}: {exc}")
         return None
 
 
-def parse_listing_page(page: Page, now) -> list[dict]:
+def parse_listing_page(page: Page, now, errors: Optional[list[str]] = None) -> list[dict]:
     """Парсит все карточки текущей страницы поиска."""
     try:
         page.wait_for_selector("[data-cy='l-card']", timeout=20000)
-    except Exception:
-        pass  # возможно, страница пустая или заблокирована
+    except Exception as exc:
+        if errors is not None:
+            errors.append(f"listing selector wait: {type(exc).__name__}: {exc}")
 
     results = []
     for card in page.query_selector_all("[data-cy='l-card']"):
-        data = extract_card(card, now)
+        data = extract_card(card, now, errors)
         if data:
             results.append(data)
+    if not results and errors is not None:
+        errors.append("listing page produced no cards")
     return results

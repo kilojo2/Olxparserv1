@@ -13,3 +13,7 @@ __pycache__/
 
 # Артефакты тестов
 .pytest_cache/
+
+# Local probe scripts and their captured output
+probe*.py
+probe*_output.txt

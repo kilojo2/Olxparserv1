@@ -3,13 +3,13 @@
 Запуск (локально):
 
     Windows:
-      set TELEGRAM_API_ID=34682111
-      set TELEGRAM_API_HASH=8aa1c674e979d3be51f9e937fc7c5590
+      set TELEGRAM_API_ID=12345678
+      set TELEGRAM_API_HASH=replace-with-telegram-api-hash
       python setup_telegram.py
 
     Linux/macOS:
-      export TELEGRAM_API_ID=34682111
-      export TELEGRAM_API_HASH=8aa1c674e979d3be51f9e937fc7c5590
+      export TELEGRAM_API_ID=12345678
+      export TELEGRAM_API_HASH=replace-with-telegram-api-hash
       python setup_telegram.py
 
 Скрипт попросит номер телефона и код из Telegram (и пароль 2FA, если включён),

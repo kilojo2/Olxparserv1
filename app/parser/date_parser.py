@@ -31,6 +31,7 @@ _MONTHS = {**_UK_MONTHS, **_RU_MONTHS}
 _TODAY_RE = re.compile(r"(сьогодні|сегодня)\D*?(\d{1,2}):(\d{2})")
 _YESTERDAY_RE = re.compile(r"(вчора|вчера)\D*?(\d{1,2}):(\d{2})")
 _DAYS_AGO_RE = re.compile(r"(\d{1,2})\s*(днів|дні|дня|день|дней)\s*(тому|назад)")
+_WEEKS_AGO_RE = re.compile(r"(\d{1,2})\s*(тиж(?:день|ні|нів)?\.?|недел(?:я|и|ь)?)\s*(тому|назад)")
 _ABS_DATE_RE = re.compile(r"(\d{1,2})\s+([а-яіїєґa-z]+)\s+(\d{4})")
 
 
@@ -63,6 +64,12 @@ def parse_olx_date(text: Optional[str], now: Optional[datetime] = None) -> Optio
     m = _DAYS_AGO_RE.search(s)
     if m:
         return (now - timedelta(days=int(m.group(1)))).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+    m = _WEEKS_AGO_RE.search(s)
+    if m:
+        return (now - timedelta(days=int(m.group(1)) * 7)).replace(
             hour=0, minute=0, second=0, microsecond=0
         )
 

@@ -5,7 +5,7 @@ import asyncio
 from typing import Optional
 from zoneinfo import ZoneInfo
 
-from app.parser.extract import parse_district, parse_price_value, parse_rooms
+from app.parser.extract import parse_district, parse_price_currency, parse_price_info, parse_rooms
 
 KIEV_TZ = ZoneInfo("Europe/Kiev")
 
@@ -59,14 +59,14 @@ async def _fetch_channel_messages(config: dict) -> tuple[list[dict], list[str]]:
                 errors.append(f"telegram {channel}: {exc}")
                 continue
             for msg in messages:
-                card = _message_to_card(msg, channel)
+                card = _message_to_card(msg, channel, config.get("location"))
                 if card:
                     cards.append(card)
 
     return cards, errors
 
 
-def _message_to_card(msg, channel: str) -> Optional[dict]:
+def _message_to_card(msg, channel: str, location: Optional[str] = None) -> Optional[dict]:
     text = _clean(msg.message)
     if not text:
         return None
@@ -75,24 +75,25 @@ def _message_to_card(msg, channel: str) -> Optional[dict]:
         msg.date.astimezone(KIEV_TZ).replace(tzinfo=None) if msg.date else None
     )
 
-    price_value = parse_price_value(text)
+    price_value, currency = parse_price_info(text, default_currency="UAH")
     if price_value is not None:
         if price_value == int(price_value):
-            price = f"{int(price_value):,}".replace(",", " ") + " грн."
+            price = f"{int(price_value):,}".replace(",", " ") + f" {currency or 'UAH'}."
         else:
-            price = f"{price_value:,.2f}".replace(",", " ") + " грн."
+            price = f"{price_value:,.2f}".replace(",", " ") + f" {currency or 'UAH'}."
     else:
         price = ""
 
     return {
-        "olx_id": f"tg-{msg.id}",
+        "olx_id": f"tg-{normalize_channel(channel)}-{msg.id}",
         "url": f"https://t.me/{channel}/{msg.id}",
         "title": text[:300],
         "price": price,
         "price_value": price_value,
+        "currency": currency,
         "rooms": parse_rooms(text),
         "area": "",
-        "location": "Хмельницький",
+        "location": location or "Хмельницький",
         "district": parse_district(text),
         "published_at": published_at,
         "source": "telegram",

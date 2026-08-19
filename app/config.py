@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     # --- Приложение ---
-    app_name: str = "OLX Rent Parser"
+    app_name: str = "Apartment Rent Parser"
 
     # --- Парсер ---
     city: str = "Хмельницький"
@@ -40,7 +40,17 @@ class Settings(BaseSettings):
     olx_base_url: str = "https://www.olx.ua"
 
     # --- Админ ---
-    admin_password: str = "changeme"
+    # Must be supplied through the environment. An empty value disables login.
+    admin_password: Optional[str] = None
+    secret_key: Optional[str] = None
+    admin_token_ttl_seconds: int = 86400
+    admin_login_rate_limit: int = 5
+    admin_login_rate_window_seconds: int = 300
+
+    # Scheduler is opt-in in deployments with more than one worker.
+    scheduler_enabled: bool = True
+    scheduler_run_on_start: bool = False
+    scheduler_allow_multi_worker: bool = False
 
     # --- Telegram ---
     telegram_enabled: bool = False

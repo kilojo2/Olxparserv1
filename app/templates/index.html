@@ -1,22 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}OLX Парсер — свіжі оголошення{% endblock %}
+{% block title %}Агрегатор — свіжі оголошення{% endblock %}
 
 {% block content %}
 <section class="summary">
   <p>
-    Збережено <strong id="count">0</strong> свіжих оголошень (молодші за 2 дні)
+    Знайдено <strong id="count">0</strong> оголошень
     · <span id="countdown" class="countdown">До оновлення: —</span>
+    <button id="run-now" class="btn" type="button">▶ Запустити зараз</button>
+    <span id="status" class="status"></span>
   </p>
 </section>
 
 <section class="filters">
   <div class="filter-group">
-    <label for="f-min-price">Ціна від, грн</label>
+    <label for="f-currency">Валюта</label>
+    <select id="f-currency"><option value="">Всі</option></select>
+  </div>
+  <div class="filter-group">
+    <label for="f-min-price">Ціна від</label>
     <input type="number" id="f-min-price" min="0" placeholder="0">
   </div>
   <div class="filter-group">
-    <label for="f-max-price">Ціна до, грн</label>
+    <label for="f-max-price">Ціна до</label>
     <input type="number" id="f-max-price" min="0" placeholder="∞">
   </div>
   <div class="filter-group">

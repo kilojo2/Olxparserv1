@@ -1,4 +1,12 @@
-from app.parser.extract import parse_district, parse_price_value, parse_rooms, parse_tg_price
+from app.parser.extract import (
+    parse_district,
+    parse_price_currency,
+    parse_price_info,
+    parse_price_value,
+    parse_rooms,
+    parse_tg_price,
+)
+from app.parser.date_parser import parse_olx_date
 
 
 def test_price_simple():
@@ -17,12 +25,31 @@ def test_price_with_negotiable():
     assert parse_price_value("18 000 грн. Договірна") == 18000.0
 
 
+def test_price_currency_is_preserved():
+    assert parse_price_info("$315") == (315.0, "USD")
+    assert parse_price_currency("20 000 грн") == "UAH"
+
+
+def test_telegram_phone_is_not_a_price():
+    assert parse_tg_price("Телефон 067 123 45 67") is None
+
+
+def test_relative_week_date():
+    assert parse_olx_date("1 тиж. тому") is not None
+
+
 def test_rooms_explicit():
     assert parse_rooms("Оренда 2к квартири") == 2
 
 
 def test_rooms_kimnata():
     assert parse_rooms("2-кімнатна квартира") == 2
+
+
+def test_rooms_ukrainian_and_keycap_forms():
+    assert parse_rooms("Двохкімнатна квартира") == 2
+    assert parse_rooms("2️⃣ - КІМНАТНА квартира") == 2
+    assert parse_rooms("1- кімнатна квартира") == 1
 
 
 def test_rooms_word():

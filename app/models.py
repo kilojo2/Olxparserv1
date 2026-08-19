@@ -18,6 +18,7 @@ class Listing(Base):
     url = Column(String(512), unique=True, index=True, nullable=False)
     title = Column(String(512), nullable=True)
     price = Column(String(128), nullable=True)
+    currency = Column(String(8), nullable=True, index=True)
     area = Column(String(64), nullable=True)
     location = Column(String(256), nullable=True)
     price_value = Column(Float, nullable=True, index=True)
@@ -40,6 +41,7 @@ class Listing(Base):
             "title": self.title,
             "price": self.price,
             "price_value": self.price_value,
+            "currency": self.currency,
             "rooms": self.rooms,
             "area": self.area,
             "location": self.location,

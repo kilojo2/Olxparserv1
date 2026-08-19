@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import httpx
 from bs4 import BeautifulSoup
 
-from app.parser.extract import parse_district, parse_rooms, parse_tg_price
+from app.parser.extract import normalize_currency, parse_district, parse_price_currency, parse_rooms, parse_tg_price
 
 KIEV_TZ = ZoneInfo("Europe/Kiev")
 _POST_ID_RE = re.compile(r"/(\d+)$")
@@ -44,13 +44,13 @@ def run_telegram_web_parse(config: dict) -> tuple[list[dict], list[str]]:
     errors: list[str] = []
     for channel in channels:
         try:
-            cards.extend(_parse_channel(channel, config.get("limit", 30)))
+            cards.extend(_parse_channel(channel, config.get("limit", 30), config.get("location")))
         except Exception as exc:  # noqa: BLE001
             errors.append(f"telegram {channel}: {exc}")
     return cards, errors
 
 
-def _parse_channel(channel: str, limit: int) -> list[dict]:
+def _parse_channel(channel: str, limit: int, location: Optional[str] = None) -> list[dict]:
     url = f"https://t.me/s/{channel}"
     resp = httpx.get(url, headers=_HEADERS, timeout=30, follow_redirects=True)
     resp.raise_for_status()
@@ -72,7 +72,7 @@ def _parse_channel(channel: str, limit: int) -> list[dict]:
             continue
 
         published_at = _extract_time(msg)
-        cards.append(_build_card(channel, msg_id, text, published_at))
+        cards.append(_build_card(channel, msg_id, text, published_at, config_location=location))
         if len(cards) >= limit:
             break
     return cards
@@ -93,13 +93,20 @@ def _extract_time(msg) -> Optional[datetime]:
     return None
 
 
-def _build_card(channel: str, msg_id: str, text: str, published_at: Optional[datetime]) -> dict:
+def _build_card(
+    channel: str,
+    msg_id: str,
+    text: str,
+    published_at: Optional[datetime],
+    config_location: Optional[str] = None,
+) -> dict:
     price_value = parse_tg_price(text)
+    currency = parse_price_currency(text) or ("UAH" if price_value is not None else None)
     if price_value is not None:
         if price_value == int(price_value):
-            price = f"{int(price_value):,}".replace(",", " ") + " грн."
+            price = f"{int(price_value):,}".replace(",", " ") + f" {currency or 'UAH'}."
         else:
-            price = f"{price_value:,.2f}".replace(",", " ") + " грн."
+            price = f"{price_value:,.2f}".replace(",", " ") + f" {currency or 'UAH'}."
     else:
         price = ""
 
@@ -109,14 +116,15 @@ def _build_card(channel: str, msg_id: str, text: str, published_at: Optional[dat
         area = area_m.group(0)
 
     return {
-        "olx_id": f"tg-{msg_id}",
+        "olx_id": f"tg-{channel}-{msg_id}",
         "url": f"https://t.me/{channel}/{msg_id}",
         "title": text[:300],
         "price": price,
         "price_value": price_value,
+        "currency": normalize_currency(currency) or currency,
         "rooms": parse_rooms(text),
         "area": area,
-        "location": "Хмельницький",
+        "location": config_location if config_location else "Хмельницький",
         "district": parse_district(text),
         "published_at": published_at,
         "source": "telegram",
